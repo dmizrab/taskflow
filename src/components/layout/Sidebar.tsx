@@ -1,14 +1,24 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, FolderOpen } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { LayoutDashboard, FolderOpen, LogOut } from 'lucide-react'
+import { cn, getInitials } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { Avatar } from '@/components/ui/Avatar'
+
+const COLORS = [
+  'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
+  'bg-pink-500', 'bg-teal-500', 'bg-red-500', 'bg-indigo-500',
+]
+
+function colorForName(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return COLORS[Math.abs(hash) % COLORS.length]
+}
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { profile } = useAuth()
+  const { profile, logout } = useAuth()
 
   const links = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -49,15 +59,24 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Usuario actual (solo lectura) */}
-      <div className="border-t border-gray-700/50 p-4">
-        <div className="flex items-center gap-3">
-          <Avatar profile={profile} size="sm" />
-          <div className="min-w-0">
+      {/* Usuario + salir */}
+      <div className="border-t border-gray-700/50 p-3 space-y-1">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0', colorForName(profile?.full_name ?? ''))}>
+            {getInitials(profile?.full_name ?? '?')}
+          </div>
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-white truncate">{profile?.full_name}</p>
-            <p className="text-xs text-gray-500 truncate capitalize">{profile?.role}</p>
+            <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
           </div>
         </div>
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors text-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          Cambiar usuario
+        </button>
       </div>
     </aside>
   )
