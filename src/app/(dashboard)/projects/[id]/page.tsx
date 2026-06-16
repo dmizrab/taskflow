@@ -1,19 +1,32 @@
 'use client'
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, ArrowLeft, Loader2, Trash2, Users } from 'lucide-react'
+import { Plus, ArrowLeft, Loader2, Trash2, Users, LayoutList, GanttChartSquare, CalendarDays, AlignLeft } from 'lucide-react'
 import { useProject, useDeleteProject } from '@/hooks/useProjects'
 import { useTasks } from '@/hooks/useTasks'
 import { TaskTable } from '@/components/tasks/TaskTable'
 import { TaskFiltersBar } from '@/components/tasks/TaskFilters'
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal'
 import { ProjectMembersModal } from '@/components/projects/ProjectMembersModal'
+import { GanttView } from '@/components/tasks/GanttView'
+import { CalendarView } from '@/components/tasks/CalendarView'
+import { TimelineView } from '@/components/tasks/TimelineView'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import type { TaskFilters, Profile } from '@/types'
+
+type ViewMode = 'table' | 'gantt' | 'calendar' | 'timeline'
+
+const VIEW_TABS: { id: ViewMode; label: string; icon: React.ElementType }[] = [
+  { id: 'table', label: 'Tabla', icon: LayoutList },
+  { id: 'gantt', label: 'Gantt', icon: GanttChartSquare },
+  { id: 'calendar', label: 'Calendario', icon: CalendarDays },
+  { id: 'timeline', label: 'Cronograma', icon: AlignLeft },
+]
 
 const supabase = createClient()
 
@@ -25,6 +38,7 @@ export default function ProjectPage() {
   const [filters, setFilters] = useState<TaskFilters>({})
   const [showCreate, setShowCreate] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
 
   const { data: project, isLoading: loadingProject } = useProject(projectId)
   const { data: tasks = [], isLoading: loadingTasks } = useTasks(projectId, filters)
@@ -156,17 +170,41 @@ export default function ProjectPage() {
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="mb-4">
-        <TaskFiltersBar filters={filters} onChange={setFilters} members={projectMembers} />
+      {/* Selector de vista */}
+      <div className="flex items-center gap-1 mb-4 bg-gray-100 rounded-xl p-1 w-fit">
+        {VIEW_TABS.map(tab => {
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setViewMode(tab.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                viewMode === tab.id
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Tabla de tareas */}
+      {/* Filtros (solo en vista tabla) */}
+      {viewMode === 'table' && (
+        <div className="mb-4">
+          <TaskFiltersBar filters={filters} onChange={setFilters} members={projectMembers} />
+        </div>
+      )}
+
+      {/* Contenido según vista */}
       {loadingTasks ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
-      ) : (
+      ) : viewMode === 'table' ? (
         <TaskTable
           tasks={tasks}
           projectId={projectId}
@@ -175,6 +213,12 @@ export default function ProjectPage() {
           currentUserId={profile?.id ?? ''}
           userRole={userRole}
         />
+      ) : viewMode === 'gantt' ? (
+        <GanttView tasks={tasks} projectId={projectId} />
+      ) : viewMode === 'calendar' ? (
+        <CalendarView tasks={tasks} projectId={projectId} />
+      ) : (
+        <TimelineView tasks={tasks} projectId={projectId} />
       )}
 
       <CreateTaskModal
