@@ -1,10 +1,9 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/useAuth'
 import type { Project } from '@/types'
 import toast from 'react-hot-toast'
-
-const DEMO_USER_ID = '0a07190b-4f5c-44ba-8f89-eeff1396dba4'
 
 export function useProjects() {
   const supabase = createClient()
@@ -58,18 +57,19 @@ export function useProject(id: string) {
 export function useCreateProject() {
   const supabase = createClient()
   const qc = useQueryClient()
+  const { profile } = useAuth()
   return useMutation({
     mutationFn: async (values: { name: string; description?: string; color?: string }) => {
       const { data, error } = await supabase
         .from('projects')
-        .insert({ ...values, owner_id: DEMO_USER_ID })
+        .insert({ ...values, owner_id: profile.id })
         .select()
         .single()
       if (error) throw error
 
       await supabase.from('project_members').insert({
         project_id: data.id,
-        user_id: DEMO_USER_ID,
+        user_id: profile.id,
         role: 'admin',
       })
 

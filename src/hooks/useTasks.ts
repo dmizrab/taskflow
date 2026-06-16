@@ -1,11 +1,10 @@
 'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/useAuth'
 import type { Task, TaskFilters } from '@/types'
 import toast from 'react-hot-toast'
 import { isAfter, parseISO } from 'date-fns'
-
-const DEMO_USER_ID = '0a07190b-4f5c-44ba-8f89-eeff1396dba4'
 
 const TASK_SELECT = `
   *,
@@ -73,6 +72,7 @@ export function useTask(id: string) {
 export function useCreateTask() {
   const supabase = createClient()
   const qc = useQueryClient()
+  const { profile } = useAuth()
   return useMutation({
     mutationFn: async (values: Partial<Task> & { project_id: string; name: string }) => {
       const { count } = await supabase
@@ -82,7 +82,7 @@ export function useCreateTask() {
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert({ ...values, created_by: DEMO_USER_ID, position: count ?? 0 })
+        .insert({ ...values, created_by: profile.id, position: count ?? 0 })
         .select(TASK_SELECT)
         .single()
       if (error) throw error
@@ -138,11 +138,12 @@ export function useDeleteTask() {
 export function useAddComment() {
   const supabase = createClient()
   const qc = useQueryClient()
+  const { profile } = useAuth()
   return useMutation({
     mutationFn: async ({ taskId, content }: { taskId: string; content: string }) => {
       const { data, error } = await supabase
         .from('comments')
-        .insert({ task_id: taskId, user_id: DEMO_USER_ID, content })
+        .insert({ task_id: taskId, user_id: profile.id, content })
         .select('*, user:profiles(id, full_name, avatar_url)')
         .single()
       if (error) throw error
