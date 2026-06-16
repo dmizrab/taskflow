@@ -9,12 +9,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
 
   useEffect(() => {
+    // Solo redirigir DESPUÉS de que la verificación haya terminado
     if (!loading && !isAuthenticated) {
       router.replace('/pin')
     }
   }, [loading, isAuthenticated])
 
-  if (loading || !isAuthenticated) return null
+  // Mientras carga, mostrar pantalla en blanco limpia (sin parpadeo)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  // Si no está autenticado, no renderizar nada (el useEffect ya redirige)
+  if (!isAuthenticated) return null
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

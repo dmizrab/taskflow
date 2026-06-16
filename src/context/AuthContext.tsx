@@ -1,19 +1,31 @@
 'use client'
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useReducer } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types'
 
 export const STORAGE_USER = 'taskflow_user_id'
 export const STORAGE_AUTH = 'taskflow_pin_ok'
 
-const FALLBACK_PROFILE: Profile = {
-  id: '',
-  email: '',
-  full_name: '',
-  avatar_url: null,
-  role: 'member',
-  created_at: '',
-  updated_at: '',
+interface AuthState {
+  profile: Profile | null
+  loading: boolean
+  isAuthenticated: boolean
+}
+
+type AuthAction =
+  | { type: 'LOADED'; profile: Profile }
+  | { type: 'UNAUTHENTICATED' }
+
+function reducer(_: AuthState, action: AuthAction): AuthState {
+  if (action.type === 'LOADED') {
+    return { profile: action.profile, loading: false, isAuthenticated: true }
+  }
+  return { profile: null, loading: false, isAuthenticated: false }
+}
+
+const EMPTY_PROFILE: Profile = {
+  id: '', email: '', full_name: '', avatar_url: null,
+  role: 'member', created_at: '', updated_at: '',
 }
 
 interface AuthContextValue {
@@ -25,25 +37,26 @@ interface AuthContextValue {
 }
 
 export const AuthContext = createContext<AuthContextValue>({
-  user: FALLBACK_PROFILE,
-  profile: FALLBACK_PROFILE,
+  user: EMPTY_PROFILE,
+  profile: EMPTY_PROFILE,
   loading: true,
   isAuthenticated: false,
   logout: () => {},
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<Profile>(FALLBACK_PROFILE)
-  const [loading, setLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [state, dispatch] = useReducer(reducer, {
+    profile: null,
+    loading: true,
+    isAuthenticated: false,
+  })
 
   useEffect(() => {
     const userId = localStorage.getItem(STORAGE_USER)
     const pinOk = localStorage.getItem(STORAGE_AUTH)
 
     if (!userId || pinOk !== 'true') {
-      setLoading(false)
-      setIsAuthenticated(false)
+      dispatch({ type: 'UNAUTHENTICATED' })
       return
     }
 
@@ -55,28 +68,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .single()
       .then(({ data }) => {
         if (data) {
-          setProfile(data as Profile)
-          setIsAuthenticated(true)
+          dispatch({ type: 'LOADED', profile: data as Profile })
         } else {
-          // ID inválido — limpiar sesión
           localStorage.removeItem(STORAGE_USER)
           localStorage.removeItem(STORAGE_AUTH)
-          setIsAuthenticated(false)
+          dispatch({ type: 'UNAUTHENTICATED' })
         }
-        setLoading(false)
       })
   }, [])
 
   function logout() {
     localStorage.removeItem(STORAGE_USER)
     localStorage.removeItem(STORAGE_AUTH)
-    setIsAuthenticated(false)
-    setProfile(FALLBACK_PROFILE)
+    dispatch({ type: 'UNAUTHENTICATED' })
     window.location.href = '/pin'
   }
 
+  const profile = state.profile ?? EMPTY_PROFILE
+
   return (
-    <AuthContext.Provider value={{ user: profile, profile, loading, isAuthenticated, logout }}>
+    <AuthContext.Provider value={{
+      user: profile,
+      profile,
+      loading: state.loading,
+      isAuthenticated: state.isAuthenticated,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   )
