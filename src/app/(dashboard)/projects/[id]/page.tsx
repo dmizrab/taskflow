@@ -59,7 +59,7 @@ export default function ProjectPage() {
   })
 
   const userRole = profile?.role ?? 'member'
-  const canEdit = userRole === 'admin' || userRole === 'manager'
+  const canEdit = true // todos pueden crear y editar tareas
   const canDelete = userRole === 'admin' || project?.owner_id === profile?.id
 
   // Estadísticas rápidas

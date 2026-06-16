@@ -26,7 +26,7 @@ export function TaskTable({ tasks, projectId, members, filters, currentUserId, u
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
 
-  const canEdit = userRole === 'admin' || userRole === 'manager'
+  const canEdit = true // todos los miembros pueden crear y editar tareas
 
   const handleStatusChange = (task: Task, status: TaskStatus) => {
     updateTask.mutate({ id: task.id, status })
