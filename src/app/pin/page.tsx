@@ -23,7 +23,7 @@ export default function PinPage() {
     const userId = localStorage.getItem(STORAGE_USER)
     const pinOk = localStorage.getItem(STORAGE_AUTH)
     if (userId && pinOk === 'true') {
-      router.replace('/dashboard')
+      window.location.href = '/dashboard'
       return
     }
     supabase
@@ -60,7 +60,7 @@ export default function PinPage() {
     if (data?.pin === entered) {
       localStorage.setItem(STORAGE_USER, selected.id)
       localStorage.setItem(STORAGE_AUTH, 'true')
-      router.replace('/dashboard')
+      window.location.href = '/dashboard'
     } else {
       setError('PIN incorrecto')
       setPin('')
