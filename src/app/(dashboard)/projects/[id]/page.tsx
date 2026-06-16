@@ -1,12 +1,13 @@
 'use client'
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, ArrowLeft, Loader2, Trash2 } from 'lucide-react'
+import { Plus, ArrowLeft, Loader2, Trash2, Users } from 'lucide-react'
 import { useProject, useDeleteProject } from '@/hooks/useProjects'
 import { useTasks } from '@/hooks/useTasks'
 import { TaskTable } from '@/components/tasks/TaskTable'
 import { TaskFiltersBar } from '@/components/tasks/TaskFilters'
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal'
+import { ProjectMembersModal } from '@/components/projects/ProjectMembersModal'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
@@ -23,6 +24,7 @@ export default function ProjectPage() {
   const { profile } = useAuth()
   const [filters, setFilters] = useState<TaskFilters>({})
   const [showCreate, setShowCreate] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
 
   const { data: project, isLoading: loadingProject } = useProject(projectId)
   const { data: tasks = [], isLoading: loadingTasks } = useTasks(projectId, filters)
@@ -95,6 +97,10 @@ export default function ProjectPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setShowMembers(true)}>
+            <Users className="w-4 h-4" />
+            Miembros
+          </Button>
           {canEdit && (
             <Button onClick={() => setShowCreate(true)}>
               <Plus className="w-4 h-4" />
@@ -176,6 +182,12 @@ export default function ProjectPage() {
         members={projectMembers}
         open={showCreate}
         onClose={() => setShowCreate(false)}
+      />
+      <ProjectMembersModal
+        projectId={projectId}
+        projectName={project.name}
+        open={showMembers}
+        onClose={() => setShowMembers(false)}
       />
     </div>
   )
