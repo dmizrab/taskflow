@@ -79,3 +79,19 @@ export function getInitials(name: string) {
     .join('')
     .toUpperCase()
 }
+
+export function formatDuration(startIso: string | null, endIso?: string | null): string {
+  if (!startIso) return '—'
+  const start = parseISO(startIso)
+  const end = endIso ? parseISO(endIso) : new Date()
+  const diffMs = end.getTime() - start.getTime()
+  if (diffMs < 0) return '—'
+  const totalMins = Math.floor(diffMs / 60000)
+  const hours = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  const days = Math.floor(hours / 24)
+  const remHours = hours % 24
+  if (days > 0) return `${days}d ${remHours}h`
+  if (hours > 0) return `${hours}h ${mins}m`
+  return `${mins}m`
+}

@@ -1,13 +1,13 @@
 'use client'
 import { useState } from 'react'
-import { Plus, Trash2, MessageSquare, Paperclip } from 'lucide-react'
+import { Plus, Trash2, MessageSquare, Paperclip, Timer, Hash } from 'lucide-react'
 import { StatusBadge, PriorityBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { TaskModal } from './TaskModal'
 import { CreateTaskModal } from './CreateTaskModal'
 import { useUpdateTask, useDeleteTask } from '@/hooks/useTasks'
-import { formatDate, isOverdue, isDueToday, STATUS_LABELS, PRIORITY_LABELS, cn } from '@/lib/utils'
+import { formatDate, isOverdue, isDueToday, formatDuration, STATUS_LABELS, PRIORITY_LABELS, cn } from '@/lib/utils'
 import type { Task, Profile, TaskStatus, TaskPriority, TaskFilters } from '@/types'
 
 interface TaskTableProps {
@@ -88,6 +88,8 @@ export function TaskTable({ tasks, projectId, members, filters, currentUserId, u
               <th className="text-left px-4 py-3 font-medium text-gray-600 w-36">Estado</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 w-28">Prioridad</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 w-32">Fecha límite</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 w-24">Tiempo</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 w-28">Avance</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 w-16">Info</th>
               <th className="w-10 px-2" />
             </tr>
@@ -238,6 +240,65 @@ export function TaskTable({ tasks, projectId, members, filters, currentUserId, u
                           <span className="text-gray-300">Sin fecha</span>
                         )}
                       </div>
+                    )}
+                  </td>
+
+                  {/* Tiempo */}
+                  <td className="px-4 py-3">
+                    {task.started_at ? (
+                      <div className="flex items-center gap-1 text-xs" title={
+                        task.status === 'in_progress' ? 'Tiempo transcurrido' :
+                        task.status === 'completed' ? 'Duración total' : ''
+                      }>
+                        <Timer className={cn(
+                          'w-3 h-3',
+                          task.status === 'in_progress' ? 'text-blue-500' :
+                          task.status === 'completed' ? 'text-green-500' : 'text-gray-400'
+                        )} />
+                        <span className={cn(
+                          task.status === 'in_progress' ? 'text-blue-600 font-medium' :
+                          task.status === 'completed' ? 'text-green-600 font-medium' : 'text-gray-500'
+                        )}>
+                          {formatDuration(task.started_at, task.completed_at)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
+                  </td>
+
+                  {/* Avance / Unidades */}
+                  <td className="px-4 py-3">
+                    {task.target_count ? (
+                      <div>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className={cn(
+                            'font-medium',
+                            (task.done_count ?? 0) >= task.target_count ? 'text-green-600' : 'text-gray-700'
+                          )}>
+                            {task.done_count ?? 0}
+                            <span className="text-gray-400 font-normal"> / {task.target_count}</span>
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden w-20">
+                          <div
+                            className={cn('h-full rounded-full transition-all', (task.done_count ?? 0) >= task.target_count ? 'bg-green-500' : 'bg-blue-500')}
+                            style={{ width: `${Math.min(100, Math.round(((task.done_count ?? 0) / task.target_count) * 100))}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : isEditing(task.id, 'done_count') ? (
+                      <input
+                        autoFocus
+                        type="number"
+                        min="0"
+                        defaultValue={task.done_count ?? 0}
+                        className="w-16 rounded-md border border-blue-400 px-2 py-1 text-xs focus:outline-none"
+                        onBlur={(e) => { updateTask.mutate({ id: task.id, done_count: parseInt(e.target.value) || 0 }); setEditingCell(null) }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingCell(null) }}
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
                     )}
                   </td>
 

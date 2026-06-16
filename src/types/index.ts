@@ -44,6 +44,10 @@ export interface Task {
   priority: TaskPriority
   due_date: string | null
   start_date: string | null
+  started_at: string | null
+  completed_at: string | null
+  target_count: number | null
+  done_count: number
   position: number
   created_by: string
   created_at: string

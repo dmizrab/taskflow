@@ -24,6 +24,7 @@ export function CreateTaskModal({ projectId, members, open, onClose }: CreateTas
     status: 'pending' as TaskStatus,
     priority: 'medium' as TaskPriority,
     due_date: '',
+    target_count: '',
   })
   const [error, setError] = useState('')
 
@@ -39,6 +40,8 @@ export function CreateTaskModal({ projectId, members, open, onClose }: CreateTas
       status: form.status,
       priority: form.priority,
       due_date: form.due_date || null,
+      target_count: form.target_count ? parseInt(form.target_count) : null,
+      done_count: 0,
     })
     onClose()
   }
@@ -102,6 +105,18 @@ export function CreateTaskModal({ projectId, members, open, onClose }: CreateTas
             options={priorityOptions}
             value={form.priority}
             onChange={(e) => setForm(f => ({ ...f, priority: e.target.value as TaskPriority }))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Meta de unidades <span className="text-gray-400 font-normal">(opcional)</span></label>
+          <input
+            type="number"
+            min="0"
+            value={form.target_count}
+            onChange={(e) => setForm(f => ({ ...f, target_count: e.target.value }))}
+            placeholder="Ej: 50 depósitos, 200 llamadas..."
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
 

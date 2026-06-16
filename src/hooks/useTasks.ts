@@ -101,6 +101,14 @@ export function useUpdateTask() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...values }: Partial<Task> & { id: string }) => {
+      // Auto-timestamp when status changes
+      if (values.status === 'in_progress') {
+        const { data: current } = await supabase.from('tasks').select('started_at').eq('id', id).single()
+        if (!current?.started_at) values.started_at = new Date().toISOString()
+      }
+      if (values.status === 'completed') {
+        values.completed_at = new Date().toISOString()
+      }
       const { data, error } = await supabase
         .from('tasks')
         .update(values)

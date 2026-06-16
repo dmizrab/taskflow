@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { StatusBadge, PriorityBadge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { useTask, useUpdateTask, useAddComment } from '@/hooks/useTasks'
-import { formatDate, isOverdue, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/utils'
-import { Clock, Send, History } from 'lucide-react'
+import { formatDate, isOverdue, formatDuration, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/utils'
+import { Clock, Send, History, Timer, Hash, Play, CheckCircle2 } from 'lucide-react'
 import type { Task, Profile, TaskStatus, TaskPriority } from '@/types'
 
 interface TaskModalProps {
@@ -236,6 +236,86 @@ export function TaskModal({ task: initialTask, members, open, onClose, canEdit }
                 )}
               </div>
             )}
+          </div>
+
+          {/* Tiempo de ejecución */}
+          <div className="pt-3 border-t border-gray-100">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Tiempo</label>
+            <div className="space-y-2 text-xs">
+              {task.started_at ? (
+                <>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Play className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Inicio: <span className="font-medium">{formatDate(task.started_at, 'dd MMM, HH:mm')}</span></span>
+                  </div>
+                  {task.completed_at && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                      <span>Fin: <span className="font-medium">{formatDate(task.completed_at, 'dd MMM, HH:mm')}</span></span>
+                    </div>
+                  )}
+                  <div className={`flex items-center gap-2 font-semibold ${task.completed_at ? 'text-green-600' : 'text-blue-600'}`}>
+                    <Timer className="w-3.5 h-3.5" />
+                    <span>{task.completed_at ? 'Total' : 'Transcurrido'}: {formatDuration(task.started_at, task.completed_at)}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-400 italic">Cambia el estado a "En proceso" para iniciar el cronómetro</p>
+              )}
+            </div>
+          </div>
+
+          {/* Avance / Unidades */}
+          <div className="pt-3 border-t border-gray-100">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Conteo de unidades
+            </label>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Meta (total a completar)</label>
+                {canEdit ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={task.target_count ?? ''}
+                    onChange={(e) => handleUpdate('target_count', e.target.value ? parseInt(e.target.value) : null)}
+                    placeholder="Ej: 100 depósitos"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                ) : (
+                  <span className="text-sm text-gray-700">{task.target_count ?? '—'}</span>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Completadas hasta ahora</label>
+                {canEdit ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max={task.target_count ?? undefined}
+                    value={task.done_count ?? 0}
+                    onChange={(e) => handleUpdate('done_count', parseInt(e.target.value) || 0)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                ) : (
+                  <span className="text-sm text-gray-700">{task.done_count ?? 0}</span>
+                )}
+              </div>
+              {task.target_count && (
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{task.done_count ?? 0} / {task.target_count}</span>
+                    <span>{Math.min(100, Math.round(((task.done_count ?? 0) / task.target_count) * 100))}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${(task.done_count ?? 0) >= task.target_count ? 'bg-green-500' : 'bg-blue-500'}`}
+                      style={{ width: `${Math.min(100, Math.round(((task.done_count ?? 0) / task.target_count) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Metadatos */}
